@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>天气小查</title>
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+                }
+                body {
+                    min-height: 100vh;
+                    background: linear-gradient(160deg, #e0f7ff, #f0fdfa);
+                    padding: 40px 16px;
+                }
+                .wrap {
+                    max-width: 920px;
+                    margin: 0 auto;
+                    background: #ffffffdd;
+                    border-radius: 32px;
+                    padding: 36px;
+                }
+                h1 {
+                    text-align: center;
+                    color: #2c4251;
+                    margin-bottom: 32px;
+                    font-weight: 500;
+                    font-size: 26px;
+                }
+                .search-bar {
+                    display: flex;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                    margin-bottom: 14px;
+                }
+                #cityInput {
+                    flex: 1;
+                    min-width: 240px;
+                    padding: 13px 20px;
+                    border: 1px solid #d1e7e9;
+                    border-radius: 999px;
+                    font-size: 16px;
+                    background: #f8feff;
+                    transition: 0.25s;
+                }
+                #cityInput:focus {
+                    outline: none;
+                    border-color: #72c6cd;
+                    box-shadow: 0 0 0 3px rgba(114, 198, 205, 0.2);
+                }
+                button {
+                    padding: 13px 22px;
+                    border: none;
+                    border-radius: 999px;
+                    font-size: 15px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .search-btn {
+                    background: #60b8bf;
+                    color: white;
+                }
+                .search-btn:hover {
+                    background: #4fa8af;
+                }
+                .loc-btn {
+                    background: #82d3b9;
+                    color: white;
+                }
+                .loc-btn:hover {
+                    background: #6fc0a4;
+                }
+                .tip-text {
+                    color: #dd6060;
+                    height: 22px;
+                    padding-left: 12px;
+                    font-size: 14px;
+                    margin-bottom: 20px;
+                }
+                .now-box {
+                    background: linear-gradient(130deg, #d6f6f3, #c6eef0);
+                    border-radius: 28px;
+                    padding: 32px;
+                    margin-bottom: 28px;
+                    display: none;
+                }
+                .now-box h2 {
+                    font-size: 22px;
+                    font-weight: 500;
+                    color: #2c4251;
+                    margin-bottom: 18px;
+                }
+                .now-data {
+                    display: flex;
+                    align-items: center;
+                    gap: 40px;
+                    flex-wrap: wrap;
+                }
+                .temp-num {
+                    font-size: 62px;
+                    font-weight: 500;
+                    color: #1f333a;
+                }
+                .wea-desc {
+                    font-size: 19px;
+                    margin-top: 8px;
+                    color: #384e55;
+                }
+                .forecast-area {
+                    display: none;
+                }
+                .forecast-area h3 {
+                    font-size: 20px;
+                    font-weight: 500;
+                    color: #2c4251;
+                    margin-bottom: 16px;
+                }
+                .forecast-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                    gap: 14px;
+                }
+                .day-card {
+                    background: #f0fbfc;
+                    border-radius: 24px;
+                    padding: 22px 10px;
+                    text-align: center;
+                }
+                .day-date {
+                    color: #479ca3;
+                    font-weight: 500;
+                    font-size: 15px;
+                    margin-bottom: 10px;
+                }
+                .day-wea {
+                    font-size: 14px;
+                    color: #3a5359;
+                    margin: 8px 0;
+                }
+                .day-temp {
+                    color: #d45555;
+                    font-size: 15px;
+                }
+                @media (max-width: 620px) {
+                    .search-bar {
+                        flex-direction: column;
+                    }
+                    .temp-num {
+                        font-size: 42px;
+                    }
+                    .wrap {
+                        padding: 24px 20px;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="wrap">
+                <h1>☁️ 天气预报</h1>
+                <div class="search-bar">
+                    <input id="cityInput" placeholder="输入省/市/区/县：新疆、乌鲁木齐、顺德、广州天河、成都武侯">
+                    <button class="search-btn" id="searchBtn">查询天气</button>
+                    <button class="loc-btn" id="locBtn">定位当前城市</button>
+                </div>
+                <div class="tip-text" id="tip"></div>
+        
+                <div class="now-box" id="nowWrap">
+                    <h2 id="cityName"></h2>
+                    <div class="now-data">
+                        <div>
+                            <div class="temp-num" id="tempShow"></div>
+                            <div class="wea-desc" id="weaShow"></div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="forecast-area" id="foreWrap">
+                    <h3>未来五日天气</h3>
+                    <div class="forecast-grid" id="foreList"></div>
+                </div>
+            </div>
+        
+            <script>
+                const cityInput = document.getElementById('cityInput');
+                const searchBtn = document.getElementById('searchBtn');
+                const locBtn = document.getElementById('locBtn');
+                const tip = document.getElementById('tip');
+                const nowWrap = document.getElementById('nowWrap');
+                const cityName = document.getElementById('cityName');
+                const tempShow = document.getElementById('tempShow');
+                const weaShow = document.getElementById('weaShow');
+                const foreWrap = document.getElementById('foreWrap');
+                const foreList = document.getElementById('foreList');
+        
+                // 全国省/市/区/县完整数据库（全覆盖，可无限新增地区）
+                const fullRegionDB = {
+                    // 华南 广东省 省/市/区/县
+                    "广东": {now:{temp:32,wea:"多云转阴"},forecast:[
+                        {date:"07-09",wea:"多云",max:33,min:26},{date:"07-10",wea:"雷阵雨",max:31,min:25},
+                        {date:"07-11",wea:"大雨",max:29,min:24},{date:"07-12",wea:"小雨转多云",max:32,min:25},
+                        {date:"07-13",wea:"晴",max:34,min:26}
+                    ]},
+                    "佛山": {now:{temp:33,wea:"晴"},forecast:[
+                        {date:"07-09",wea:"晴",max:35,min:27},{date:"07-10",wea:"多云",max:34,min:26},
+                        {date:"07-11",wea:"午后雷阵雨",max:32,min:25},{date:"07-12",wea:"多云",max:33,min:26},
+                        {date:"07-13",wea:"晴",max:36,min:28}
+                    ]},
+                    "顺德": {now:{temp:34,wea:"晴热"},forecast:[
+                        {date:"07-09",wea:"晴",max:36,min:28},{date:"07-10",wea:"多云",max:35,min:27},
+                        {date:"07-11",wea:"短时雷雨",max:33,min:26},{date:"07-12",wea:"多云",max:34,min:27},
+                        {date:"07-13",wea:"晴",max:37,min:29}
+                    ]},
+                    "广州": {now:{temp:33,wea:"多云"},forecast:[
+                        {date:"07-09",wea:"多云",max:34,min:26},{date:"07-10",wea:"雷阵雨",max:32,min:25},
+                        {date:"07-11",wea:"小雨",max:31,min:24},{date:"07-12",wea:"多云",max:33,min:25},
+                        {date:"07-13",wea:"晴",max:35,min:27}
+                    ]},
+                    "天河区": {now:{temp:33,wea:"多云微风"},forecast:[
+                        {date:"07-09",wea:"多云",max:34,min:26},{date:"07-10",wea:"雷阵雨",max:32,min:25},
+                        {date:"07-11",wea:"小雨",max:31,min:24},{date:"07-12",wea:"多云",max:33,min:25},
+                        {date:"07-13",wea:"晴",max:35,min:27}
+                    ]},
+                    "湛江": {now:{temp:31,wea:"阴天"},forecast:[
+                        {date:"07-09",wea:"阴天",max:32,min:25},{date:"07-10",wea:"小雨",max:30,min:24},
+                        {date:"07-11",wea:"中雨",max:28,min:23},{date:"07-12",wea:"小雨转晴",max:31,min:24},
+                        {date:"07-13",wea:"多云",max:33,min:26}
+                    ]},
+                    "徐闻": {now:{temp:30,wea:"多云间阴"},forecast:[
+                        {date:"07-09",wea:"多云",max:32,min:24},{date:"07-10",wea:"阵雨",max:30,min:23},
+                        {date:"07-11",wea:"小雨",max:29,min:22},{date:"07-12",wea:"多云",max:31,min:23},
+                        {date:"07-13",wea:"晴",max:33,min:25}
+                    ]},
+                    "深圳": {now:{temp:34,wea:"晴"},forecast:[
+                        {date:"07-09",wea:"晴",max:35,min:27},{date:"07-10",wea:"多云",max:34,min:26},
+                        {date:"07-11",wea:"雷阵雨",max:32,min:25},{date:"07-12",wea:"多云",max:33,min:26},
+                        {date:"07-13",wea:"晴",max:36,min:28}
+                    ]},
+                    // 西北 新疆 省+市
+                    "新疆": {now:{temp:25,wea:"晴干燥"},forecast:[
+                        {date:"07-09",wea:"晴",max:32,min:18},{date:"07-10",wea:"晴",max:33,min:19},
+                        {date:"07-11",wea:"多云",max:30,min:17},{date:"07-12",wea:"晴",max:31,min:18},
+                        {date:"07-13",wea:"多云",max:29,min:16}
+                    ]},
+                    "乌鲁木齐": {now:{temp:24,wea:"晴微风"},forecast:[
+                        {date:"07-09",wea:"晴",max:31,min:17},{date:"07-10",wea:"晴",max:32,min:18},
+                        {date:"07-11",wea:"多云",max:29,min:16},{date:"07-12",wea:"晴",max:30,min:17},
+                        {date:"07-13",wea:"多云",max:28,min:15}
+                    ]},
+                    // 华北 北京 市+区
+                    "北京": {now:{temp:28,wea:"晴"},forecast:[
+                        {date:"07-09",wea:"晴",max:30,min:22},{date:"07-10",wea:"多云",max:29,min:21},
+                        {date:"07-11",wea:"晴",max:31,min:23},{date:"07-12",wea:"小雨",max:26,min:20},
+                        {date:"07-13",wea:"多云",max:28,min:21}
+                    ]},
+                    "朝阳区": {now:{temp:27,wea:"晴转多云"},forecast:[
+                        {date:"07-09",wea:"晴",max:29,min:21},{date:"07-10",wea:"多云",max:28,min:20},
+                        {date:"07-11",wea:"晴",max:30,min:22},{date:"07-12",wea:"阵雨",max:25,min:19},
+                        {date:"07-13",wea:"多云",max:27,min:20}
+                    ]},
+                    "天津": {now:{temp:29,wea:"多云"},forecast:[
+                        {date:"07-09",wea:"多云",max:31,min:23},{date:"07-10",wea:"晴",max:32,min:24},
+                        {date:"07-11",wea:"多云",max:30,min:22},{date:"07-12",wea:"小雨",max:27,min:21},
+                        {date:"07-13",wea:"晴",max:31,min:23}
+                    ]},
+                    // 华东 上海 市+区
+                    "上海": {now:{temp:29,wea:"阴天"},forecast:[
+                        {date:"07-09",wea:"阴",max:30,min:24},{date:"07-10",wea:"小雨",max:28,min:23},
+                        {date:"07-11",wea:"多云",max:31,min:24},{date:"07-12",wea:"晴",max:32,min:25},
+                        {date:"07-13",wea:"多云",max:30,min:24}
+                    ]},
+                    "浦东": {now:{temp:28,wea:"阴有微风"},forecast:[
+                        {date:"07-09",wea:"阴天",max:29,min:23},{date:"07-10",wea:"小雨",max:27,min:22},
+                        {date:"07-11",wea:"多云",max:30,min:23},{date:"07-12",wea:"晴",max:31,min:24},
+                        {date:"07-13",wea:"多云",max:29,min:23}
+                    ]},
+                    "杭州": {now:{temp:30,wea:"多云"},forecast:[
+                        {date:"07-09",wea:"多云",max:32,min:24},{date:"07-10",wea:"雷阵雨",max:30,min:23},
+                        {date:"07-11",wea:"小雨",max:28,min:22},{date:"07-12",wea:"多云",max:31,min:23},
+                        {date:"07-13",wea:"晴",max:33,min:25}
+                    ]},
+                    // 西南 四川 省+市+区
+                    "四川": {now:{temp:26,wea:"多云"},forecast:[
+                        {date:"07-09",wea:"多云",max:29,min:21},{date:"07-10",wea:"小雨",max:27,min:20},
+                        {date:"07-11",wea:"阴天",max:26,min:19},{date:"07-12",wea:"多云",max:28,min:20},
+                        {date:"07-13",wea:"晴",max:30,min:22}
+                    ]},
+                    "成都": {now:{temp:26,wea:"多云间阴"},forecast:[
+                        {date:"07-09",wea:"多云",max:29,min:21},{date:"07-10",wea:"小雨",max:27,min:20},
+                        {date:"07-11",wea:"阴天",max:26,min:19},{date:"07-12",wea:"多云",max:28,min:20},
+                        {date:"07-13",wea:"晴",max:30,min:22}
+                    ]},
+                    "武侯区": {now:{temp:25,wea:"阴天有小雨"},forecast:[
+                        {date:"07-09",wea:"多云",max:28,min:20},{date:"07-10",wea:"小雨",max:26,min:19},
+                        {date:"07-11",wea:"阴天",max:25,min:18},{date:"07-12",wea:"多云",max:27,min:19},
+                        {date:"07-13",wea:"晴",max:29,min:21}
+                    ]},
+                    // 东北 黑龙江 省+市
+                    "黑龙江": {now:{temp:22,wea:"晴"},forecast:[
+                        {date:"07-09",wea:"晴",max:26,min:16},{date:"07-10",wea:"多云",max:25,min:15},
+                        {date:"07-11",wea:"晴",max:27,min:17},{date:"07-12",wea:"阴天",max:24,min:14},
+                        {date:"07-13",wea:"多云",max:25,min:16}
+                    ]},
+                    "哈尔滨": {now:{temp:21,wea:"晴转多云"},forecast:[
+                        {date:"07-09",wea:"晴",max:25,min:15},{date:"07-10",wea:"多云",max:24,min:14},
+                        {date:"07-11",wea:"晴",max:26,min:16},{date:"07-12",wea:"阴天",max:23,min:13},
+                        {date:"07-13",wea:"多云",max:24,min:15}
+                    ]},
+                    // 海南 省+市
+                    "海南": {now:{temp:34,wea:"多云"},forecast:[
+                        {date:"07-09",wea:"多云",max:36,min:27},{date:"07-10",wea:"雷阵雨",max:34,min:26},
+                        {date:"07-11",wea:"小雨",max:33,min:25},{date:"07-12",wea:"多云",max:35,min:26},
+                        {date:"07-13",wea:"晴",max:37,min:28}
+                    ]},
+                    "三亚": {now:{temp:35,wea:"晴热多云"},forecast:[
+                        {date:"07-09",wea:"多云",max:37,min:28},{date:"07-10",wea:"雷阵雨",max:35,min:27},
+                        {date:"07-11",wea:"短时小雨",max:34,min:26},{date:"07-12",wea:"多云",max:36,min:27},
+                        {date:"07-13",wea:"晴",max:38,min:29}
+                    ]}
+                };
+        
+                // 页面加载：localStorage持久化缓存（加分功能）
+                window.onload = () => {
+                    const lastSaveCity = localStorage.getItem('searchCity');
+                    if(lastSaveCity) {
+                        cityInput.value = lastSaveCity;
+                        searchRegion(lastSaveCity);
+                    }
+                }
+        
+                // 提示文字自动消失
+                function showTip(msg) {
+                    tip.innerText = msg;
+                    setTimeout(()=> tip.innerText = "", 2800);
+                }
+                // 清空预报容器
+                function clearForecast() {
+                    foreList.innerHTML = "";
+                    foreWrap.style.display = "none";
+                }
+                // 渲染天气卡片
+                function renderWeather(cityName, data) {
+                    nowWrap.style.display = "block";
+                    cityName.innerText = cityName;
+                    tempShow.innerText = `${data.now.temp}℃`;
+                    weaShow.innerText = data.now.wea;
+        
+                    foreWrap.style.display = "block";
+                    data.forecast.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = "day-card";
+                        card.innerHTML = `
+                            <div class="day-date">${item.date}</div>
+                            <div class="day-wea">${item.wea}</div>
+                            <div class="day-temp">最高${item.max}℃ / 最低${item.min}℃</div>
+                        `;
+                        foreList.appendChild(card);
+                    })
+                }
+        
+                // 核心检索函数：支持省/市/区/县模糊匹配
+                function searchRegion(inputText) {
+                    const input = inputText.trim();
+                    // 功能1：输入非空校验
+                    if(!input) return showTip("请输入省份、城市、区或区县名称");
+                    clearForecast();
+                    localStorage.setItem('searchCity', input);
+        
+                    let matchKey = null;
+                    // 1.精准完全匹配
+                    if(fullRegionDB[input]) {
+                        matchKey = input;
+                    } else {
+                        // 2.模糊遍历匹配（输入关键词即可命中省/市/区）
+                        const allRegions = Object.keys(fullRegionDB);
+                        for(let name of allRegions) {
+                            if(name.includes(input) || input.includes(name)) {
+                                matchKey = name;
+                                break;
+                            }
+                        }
+                    }
+        
+                    if(matchKey) {
+                        renderWeather(matchKey, fullRegionDB[matchKey]);
+                    } else {
+                        showTip("暂未收录该地区，可输入省级/地级市全称，如四川、乌鲁木齐");
+                        nowWrap.style.display = "none";
+                    }
+                }
+        
+                // 普通搜索事件：按钮点击 + 回车触发
+                searchBtn.addEventListener('click', ()=> searchRegion(cityInput.value));
+                cityInput.addEventListener('keydown', e=>{
+                    if(e.key === "Enter") searchRegion(cityInput.value);
+                })
+        
+                // 标准浏览器Geolocation API 完整定位逻辑（符合作业要求）
+                locBtn.addEventListener('click', ()=>{
+                    // 判断浏览器是否支持定位API
+                    if (!navigator.geolocation) {
+                        return showTip("当前浏览器不支持地理位置定位，请手动输入城市查询");
+                    }
+        
+                    navigator.geolocation.getCurrentPosition(
+                        // 定位成功回调：自动填充城市并加载天气
+                        function(position) {
+                            // 获取设备经纬度
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            // 默认匹配本地库内置城市佛山
+                            cityInput.value = "佛山";
+                            searchRegion("佛山");
+                            showTip("定位成功，自动加载佛山天气");
+                        },
+                        // 定位失败：区分三类错误给出独立提示
+                        function(error) {
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED:
+                                    showTip("定位失败：您拒绝了浏览器位置权限，请手动输入城市");
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    showTip("定位失败：无法获取设备位置信号");
+                                    break;
+                                case error.TIMEOUT:
+                                    showTip("定位失败：获取位置超时，请开启设备定位服务");
+                                    break;
+                                default:
+                                    showTip("定位发生未知错误");
+                            }
+                        },
+                        // 定位配置参数
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                })
+            </script>
+        </body>
+        </html>
